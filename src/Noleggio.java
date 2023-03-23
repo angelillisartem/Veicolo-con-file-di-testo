@@ -19,7 +19,8 @@ public class Noleggio {
             System.out.print("\n3) Noleggia Veicolo");
             System.out.print("\n4) Registra Pagamento");
             System.out.print("\n5) Ricarica Prepagata");
-            System.out.print("\n6) Esci");
+            System.out.print("\n6) Cerca cliente e verifica noleggio auto");
+            System.out.print("\n7) Esci");
             System.out.print("");
             System.out.print("\nScelta: ");
 
@@ -51,13 +52,13 @@ public class Noleggio {
 
                     //auto o furgone (oppure scelta sbagliata)
                     if (tipoVeicolo > 1 && tipoVeicolo < 4){
-                        System.out.print("Inserisci i lt di benzina del veicolo");
+                        System.out.print("Inserisci i lit di benzina del veicolo: ");
                         litVeicolo = in.nextInt();
                         in.nextLine();
                         if (tipoVeicolo == 2) //aggiungo auto
-                            mioNoleggio.add(new Auto(targa,kmVeicolo,litVeicolo));      //istanzia nuovo auto e lo aggiunge alla lista dei veicoli
+                            mioNoleggio.add(new Auto(targa,kmVeicolo,litVeicolo)); //istanzia nuovo auto e lo aggiunge alla lista dei veicoli
                         else if (tipoVeicolo == 3)  {  //aggiungo furgone
-                            System.out.println("Inserisci la portata del furgone - da 1 a 3 (tonnellate)"); //chiedo la portata del furgone
+                            System.out.println("Inserisci la portata del furgone (da 1 a 3 tonnellate): "); //chiedo la portata del furgone
                             portata=in.nextInt();
                             in.nextLine();
                             mioNoleggio.add(new Furgone(targa,kmVeicolo,litVeicolo, portata));  //istanzia nuovo furgone e lo aggiunge alla lista dei veicoli
@@ -73,7 +74,7 @@ public class Noleggio {
 
                     // Crea un nuovo file di testo e scrivi il nome e il cognome al suo interno
                     try {
-                        FileWriter fileWriter = new FileWriter("src/DatiVeicolo.txt");
+                        FileWriter fileWriter = new FileWriter("src/DatiVeicolo.txt", true);
                         PrintWriter printWriter = new PrintWriter(fileWriter);
                         printWriter.println(auto.getTarga() + " " + auto.getKmPercorsi() + " " + auto.getLitBenzina());
                         printWriter.close();
@@ -81,72 +82,99 @@ public class Noleggio {
                         printWriter.close();
                         printWriter.println(bici.getTarga() + " " + bici.getKmPercorsi());
                         printWriter.close();
-                        System.out.println("I tuoi dati sono stati salvati nel file DatiVeicolo.txt.");
+                        System.out.print("\nI tuoi dati sono stati salvati nel file DatiVeicolo.txt.");
                     } catch (IOException e) {
-                        System.out.println("Si è verificato un errore durante la scrittura del file.");
+                        System.out.print("\nSi è verificato un errore durante la scrittura del file.");
                         e.printStackTrace();
                     }
                     break;
 
                 case 2: //aggiungi cliente
                     System.out.print("Inserisci nome: ");
-                    String n=in.nextLine();
-
+                    String nomeCliente = in.nextLine();
                     System.out.print("Inserisci cognome: ");
-                    String co=in.nextLine();
-
+                    String cognomeCliente = in.nextLine();
                     System.out.print("Inserisci budget: ");
-                    budget=in.nextDouble();
+                    budget = in.nextDouble();
 
-                    listaClienti.add(new Cliente(n,co,budget));         //istanzia nuovo cliente e lo aggiunge alla lista dei clienti
+                    listaClienti.add(new Cliente(nomeCliente,cognomeCliente, budget)); //istanzia nuovo cliente e lo aggiunge alla lista dei clienti
+
+                    Cliente cliente1 = new Cliente(nomeCliente, cognomeCliente, budget);
+
+                    // Crea un nuovo file di testo e scrivi: nome, cognome e il budget del cliente
+                    try {
+                        FileWriter fileWriter = new FileWriter("src/DatiCliente.txt", true);
+                        PrintWriter printWriter = new PrintWriter(fileWriter);
+                        printWriter.println(cliente1.getNome() + " " + cliente1.getCognome() + " " + cliente1.getBudget());
+                        printWriter.close();
+                        System.out.print("\nI tuoi dati sono stati salvati nel file DatiCliente.txt.");
+                    } catch (IOException e) {
+                        System.out.print("\nSi è verificato un errore durante la scrittura del file.");
+                        e.printStackTrace();
+                    }
                     break;
 
-                case 3: //noleggia un veicolo ad un cliente
-                    System.out.print("Inserisci targa del veicolo da noleggiare");
-                    targa=in.nextLine();
+                case 3: //noleggia un veicolo a un cliente
+                    // leggi il percorso del file e la targa del veicolo dall'input dell'utente
+                    Scanner scannerNoleggio = new Scanner(System.in);
+                    System.out.print("\nInserisci il percorso del file: ");
+                    String filePathNoleggio = scannerNoleggio.nextLine();
+                    System.out.print("\nInserisci la targa del veicolo: ");
+                    String cercaTarga = scannerNoleggio.nextLine();
 
-                    System.out.print("Inserisci nome cliente");
-                    nome=in.nextLine();
-
-                    System.out.print("Inserisci cognome cliente");
-                    cognome=in.nextLine();
-
-                    int posVeicolo=cercaVeicolo(targa);         //metodo statico della classe noleggio
-                    int posCliente=cercaCliente(nome,cognome);  //metodo statico della classe noleggio
-                    if (posVeicolo>=0 && posCliente>=0 )        // esiste sia il veicolo che il cliente
-                        (mioNoleggio.get(posVeicolo)).noleggia(listaClienti.get(posCliente));   //metodo concreto noleggia di Veicolo
-                    else
-                        System.out.print("Ricontrolla i dati");
+                    // cerca il veicolo nel file
+                    boolean trovatoTarga = false;
+                    try {
+                        File file = new File(filePathNoleggio);
+                        Scanner fileScanner = new Scanner(file);
+                        while (fileScanner.hasNextLine()) {
+                            String line = fileScanner.nextLine();
+                            String[] parts = line.split(" ");
+                            String fileTarga = parts[0]; // la targa è il primo elemento della riga
+                            if (fileTarga.equalsIgnoreCase(cercaTarga)) {
+                                trovatoTarga = true;
+                                boolean noleggiato = Boolean.parseBoolean(parts[2]); // il flag di noleggio è il terzo elemento della riga
+                                if (noleggiato) {
+                                    System.out.println("Il veicolo con targa " + cercaTarga + " è già stato noleggiato.");
+                                } else {
+                                    System.out.println("Il veicolo con targa " + cercaTarga + " può essere noleggiato.");
+                                }
+                                break;
+                            }
+                        }
+                        fileScanner.close();
+                        if (!trovatoTarga) {
+                            System.out.println("Il veicolo con targa " + cercaTarga + " non è stato trovato nel file.");
+                        }
+                    } catch (FileNotFoundException e) {
+                        System.out.println("Il file non esiste o non può essere letto.");
+                    }
                     break;
 
-                case 4: //Riconsegna auto, acquisizione dati del noleggio( km, ore, stato, benzina) , calcolo pagamento ed budget cliente
-                    System.out.println("Inserisci targa del veicolo restituito");
-                    targa=in.nextLine();
-
+                case 4: //Riconsegna auto, acquisizione dati del noleggio(km, ore, stato, benzina) , calcolo pagamento ed budget cliente
+                    System.out.print("\nInserisci targa del veicolo restituito: ");
+                    targa = in.nextLine();
                     int i = 0, posCli =- 1;
-
                     int ltConsumati = 0; // lt di benzina
-
                     Veicolo vNoleggiato = null;
-
                     boolean trovato = false;
                     for (Cliente cl : listaClienti) { //cerca cliente a cui il veicolo e' stato noleggiato
                         if((cl.getVeicoloNoleggiato())!=null && (cl.getVeicoloNoleggiato()).equals(targa) ){ //cliente a cui ho noleggiato il veicolo
-                            vNoleggiato=mioNoleggio.get(cercaVeicolo(targa)); //estraggo il veicolo noleggiato
-                            posCli= listaClienti.indexOf(cl); // e la posizione del cliente nella lista
+                            vNoleggiato = mioNoleggio.get(cercaVeicolo(targa)); //estraggo il veicolo noleggiato
+                            posCli = listaClienti.indexOf(cl); // e la posizione del cliente nella lista
                         }
                     }
                     if(posCli < 0)
-                        System.out.print("veicolo non noleggiato");
+                        System.out.print("\nVeicolo non noleggiato");
                     else { //veicolo noleggiato
-                        System.out.print("Quanti km ha ora il veicolo?");
-                        double newKm= in.nextDouble(); //km contakm dopo la restituzione del veicolo
+                        System.out.print("\nQuanti km ha ora il veicolo?");
+                        double newKm = in.nextDouble(); //km contakm dopo la restituzione del veicolo
                         in.nextLine();
                         double kmPercorsi = newKm - vNoleggiato.getKmPercorsi(); //calcolo differenza km
                         vNoleggiato.setKmPercorsi(newKm); // aggiorna km totale veicolo nel contakm
 
                         System.out.print("Quante ore è durato il noleggio?");
-                        int tempoNol=in.nextInt(); //tempo del noleggio in ore
+                        int tempoNol = in.nextInt(); //tempo del noleggio in ore
                         in.nextLine();
 
                         if (vNoleggiato instanceof Bici ){ //se il veicolo è una bici
@@ -177,33 +205,68 @@ public class Noleggio {
                     break;
 
                 case 5: //aumenta il budget del cliente richiesto dall'utente della cifra richiesta
-                    System.out.println("Inserisci nome cliente");
-                    nome=in.nextLine();
+                    System.out.print("\nInserisci nome cliente: ");
+                    nome = in.nextLine();
+                    System.out.print("\nInserisci cognome cliente: ");
+                    cognome = in.nextLine();
+                    System.out.print("\nInserisci cifra da ricaricare: ");
+                    budget = in.nextDouble();
 
-                    System.out.println("Inserisci cognome cliente");
-                    cognome=in.nextLine();
-
-                    System.out.println("Inserisci cifra da ricaricare");
-                    budget=in.nextDouble();
-                    if(listaClienti!=null){
-                        double oldbudget=0;                 //variabile per budget prima della ricarica
+                    if(listaClienti != null){
+                        double oldbudget = 0;                 //variabile per budget prima della ricarica
                         int pos=cercaCliente(nome,cognome);
-                        if (pos>=0){
-                            oldbudget=(listaClienti.get(pos)).getBudget();  //estraggo il budget attuale (prima della ricarica)
-                            System.out.println("Vechhio Budget " +oldbudget);
-                            budget=budget+ oldbudget;                       //incremento il budget con la cfra da ricaricare
+                        if (pos >= 0){
+                            oldbudget = (listaClienti.get(pos)).getBudget();  //estraggo il budget attuale (prima della ricarica)
+                            System.out.println("\nVechhio Budget " + oldbudget);
+                            budget=budget + oldbudget;                       //incremento il budget con la cfra da ricaricare
                             (listaClienti.get(pos)).setBudget(budget);      //assegno nuovo budget all'attributo del cliente
                             System.out.println("nuovo Budget " + listaClienti.get(pos).getBudget());        //scrivo a video
                         } else
-                            System.out.println("Cliente non esistente");
+                            System.out.print("\nCliente non esistente");
                     }else
-                        System.out.println("Non ci sono ancora clienti in questo momento");
+                        System.out.print("\nNon ci sono ancora clienti in questo momento");
+                    break;
+
+                case 6: //Cerca cliente e verifica noleggio auto
+                    // leggi il percorso del file e il cognome del cliente dall'input dell'utente
+                    Scanner scannerCliente = new Scanner(System.in);
+                    System.out.print("\nInserisci il percorso del file: ");
+                    String filePathCliente = scannerCliente.nextLine();
+                    System.out.print("\nInserisci il cognome del cliente: ");
+                    String cognomeDelCliente = scannerCliente.nextLine();
+
+                    // cerca il cliente nel file
+                    boolean trovata = false;
+                    try {
+                        File file = new File(filePathCliente);
+                        Scanner fileScanner = new Scanner(file);
+                        while (fileScanner.hasNextLine()) {
+                            String line = fileScanner.nextLine();
+                            String[] parts = line.split(" ");
+                            String fileCognome = parts[1]; // il cognome è il secondo elemento della riga
+                            if (fileCognome.equalsIgnoreCase(cognomeDelCliente)) {
+                                trovata = true;
+                                boolean haNoleggio = Boolean.parseBoolean(parts[2]); // il flag di noleggio è il terzo elemento della riga
+                                if (haNoleggio) {
+                                    System.out.println("Il cliente " + cognomeDelCliente + " ha già noleggiato un'auto.");
+                                } else {
+                                    System.out.println("Il cliente " + cognomeDelCliente + " può noleggiare un'auto.");
+                                }
+                                break;
+                            }
+                        }
+                        fileScanner.close();
+                        if (!trovata) {
+                            System.out.println("Il cliente " + cognomeDelCliente + " non è stato trovato nel file.");
+                        }
+                    } catch (FileNotFoundException e) {
+                        System.out.println("Il file non esiste o non può essere letto.");
+                    }
                     break;
                 default:
-                    scelta=6;   //esci
+                    scelta = 7; //esci
             }
-
-        } while (scelta < 6) ;
+        } while (scelta < 7) ;
 
     }
     public static int cercaCliente (String nome, String cognome){
